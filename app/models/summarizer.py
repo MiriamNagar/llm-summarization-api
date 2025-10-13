@@ -29,11 +29,20 @@ class Summarizer:
         Yields:
             str: Each chunk of the generated text.
         """
+        # prompt = (
+        #     "Summarize the following text into exactly 5 bullet points.\n"
+        #     "- Use '•' at the start of each bullet.\n"
+        #     "- Do not add greetings or extra text.\n"
+        #     f"Text:\n{text}"
+        # )
         prompt = (
-            "Summarize the following text into exactly 5 bullet points.\n"
-            "- Use '•' at the start of each bullet.\n"
-            "- Do not add greetings or extra text.\n"
-            f"Text:\n{text}"
+            "You are a professional English writer and summarizer.\n"
+            "Write exactly 5 concise, natural bullet points that capture the main ideas and insights of the following text.\n"
+            "- Focus on meaning and intention rather than literal phrasing.\n"
+            "- Each bullet should stand alone as a complete, human-readable sentence.\n"
+            "- Use simple, fluent English and vary structure.\n"
+            "- Start each bullet with '•'.\n"
+            f"\nText:\n{text}"
         )
         messages = [{"role": "user", "content": prompt}]
         # messages = [{

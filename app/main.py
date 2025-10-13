@@ -1,11 +1,8 @@
+# app/main.py
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse, JSONResponse
 from app.models.translator import Translator
 from app.models.summarizer import Summarizer
-import re
-
-from bidi.algorithm import get_display
-import arabic_reshaper
 
 app = FastAPI(title="LLM Summarization API", version="1.0")
 
@@ -24,44 +21,52 @@ async def summarize(request: Request):
     try:
         data = await request.json()
         hebrew_text = data.get("text")
-        temperature = data.get("temperature", 0.0)
-        top_p = data.get("top_p", 0.7)
+        temperature = data.get("temperature", 0.7)
+        top_p = data.get("top_p", 0.9)
         max_tokens = data.get("max_tokens", 200)
-        output_lang = data.get("output_lang", "en")  # 'he' for Hebrew
 
         if not hebrew_text:
             return JSONResponse({"error": "Missing 'text' field"}, status_code=400)
 
-        # Step 1: Translate to English
-        english_text = translator.translate(hebrew_text, src_lang="heb_Hebr", tgt_lang="eng_Latn")
+        # Split into sentences (your translator has _split_sentences)
+        sentences = translator._split_sentences(hebrew_text, lang="hebrew")
 
-        # Step 2: Summarize and stream back
         def generate_stream():
-            for chunk in summarizer.summarize(
-                english_text, max_tokens=max_tokens, temperature=temperature, top_p=top_p, stream=True
+            # Phase 1: streamed translation (sentence-by-sentence)
+            english_parts = []
+            for i, sentence in enumerate(sentences, start=1):
+                translated = translator.translate(sentence, src_lang="heb_Hebr", tgt_lang="eng_Latn")
+                translated = translated.strip()
+                english_parts.append(translated)
+
+                # print translation to server console for verification
+                print(f"[translation {i}] {translated}")
+
+                # yield translation line to client immediately
+                yield f"TRANSLATION: {translated}\n"
+
+            # Join accumulated english
+            full_english = " ".join(english_parts).strip()
+
+            # Small separator so the client knows summary will start
+            yield "\n===SUMMARY START===\n"
+
+            # Phase 2: summarizer called once; stream tokens as they arrive
+            for token in summarizer.summarize(
+                full_english,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                top_p=top_p,
+                stream=True
             ):
-                if chunk.strip():
-                    yield chunk
+                # token is a small string (piece of text). yield immediately.
+                yield token
 
-        # def generate_stream():
-        #     if output_lang.lower() == "he":
-        #         return stream_summary_hebrew_realtime(english_text, max_tokens, temperature, top_p)
-        #     else:
-        #         for chunk in summarizer.summarize(
-        #             english_text,
-        #             max_tokens=max_tokens,
-        #             temperature=temperature,
-        #             top_p=top_p,
-        #             stream=True
-        #         ):
-        #             if chunk.strip():
-        #                 yield chunk
+            # final newline to mark end-of-stream nicely
+            yield "\n"
 
+        # use text/plain streaming so simple curl/clients can see the stream
         return StreamingResponse(generate_stream(), media_type="text/plain; charset=utf-8")
-        # return StreamingResponse(
-        #     stream_summarization(hebrew_text, max_tokens=max_tokens, temperature=temperature, top_p=top_p),
-        #     media_type="text/plain; charset=utf-8",
-        # )
 
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
