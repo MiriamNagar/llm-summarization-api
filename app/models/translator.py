@@ -17,7 +17,7 @@ class Translator:
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
         self.model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
-    def _split_sentences(self, text: str, lang="hebrew") -> List[str]:
+    def _split_sentences(self, text: str) -> List[str]:
         """
         Split text into sentences.
         For unsupported languages (like Hebrew), uses punctuation-based splitting.
@@ -27,27 +27,23 @@ class Translator:
 
     def translate(self, text: str, src_lang="heb_Hebr", tgt_lang="eng_Latn") -> str:
         """
-        Translate the full text sentence by sentence.
+        Translate a single text segment from src_lang to tgt_lang.
         """
-        sentences = self._split_sentences(text, lang='hebrew' if src_lang == 'heb_Hebr' else 'english')
-        translated_sentences = []
+        self.tokenizer.src_lang = src_lang
+        inputs = self.tokenizer(text, return_tensors="pt", padding=True, truncation=True)
 
-        for sentence in sentences:
-            self.tokenizer.src_lang = src_lang
-            inputs = self.tokenizer(sentence, return_tensors="pt", padding=True)
-            forced_bos_id = self.tokenizer.convert_tokens_to_ids(tgt_lang)
-            if forced_bos_id is None:
-                raise ValueError(f"Unknown target language code: {tgt_lang}")
+        forced_bos_id = self.tokenizer.convert_tokens_to_ids(tgt_lang)
+        if forced_bos_id is None or forced_bos_id == self.tokenizer.unk_token_id:
+            raise ValueError(f"Unknown target language code: {tgt_lang}")
 
-            generated_tokens = self.model.generate(
-                **inputs,
-                forced_bos_token_id=forced_bos_id,
-                max_new_tokens=200
-            )
-            translated = self.tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)[0]
-            translated_sentences.append(translated)
+        generated_tokens = self.model.generate(
+            **inputs,
+            forced_bos_token_id=forced_bos_id,
+            max_new_tokens=200
+        )
+        translated = self.tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)[0]
+        return translated
 
-        return " ".join(translated_sentences)
 
     def translate_for_display(self, text: str, src_lang="heb_Hebr", tgt_lang="eng_Latn") -> str:
         """
