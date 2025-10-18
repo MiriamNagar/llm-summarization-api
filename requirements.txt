@@ -1,8 +1,6 @@
 transformers==4.56.2
 torch==2.8.0
 sentencepiece==0.2.1
-python-bidi==0.6.6
-arabic-reshaper==3.0.0
 llama_cpp_python==0.3.16
 fastapi==0.119.0
 uvicorn==0.37.0
