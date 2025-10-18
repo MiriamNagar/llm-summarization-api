@@ -1,0 +1,9 @@
+{
+  "text": "הטכנולוגיה משפיעה על חיי היום יום שלנו בתחומים רבים, כולל תקשורת, בריאות וחינוך.",
+  "temperature": 0.9,
+  "top_p": 0.95,
+  "top_k": 60,
+  "repeat_penalty": 1.0,
+  "max_tokens": 150,
+  "back_translate": true
+}
