@@ -74,7 +74,7 @@ It translates Hebrew to English, generates concise 5-bullet summaries, and optio
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/llm-summarization-api.git
+git clone https://github.com/MiriamNagar/llm-summarization-api.git
 cd llm-summarization-api
 ```
 
