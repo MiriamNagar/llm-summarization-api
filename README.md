@@ -135,9 +135,13 @@ Once the file is in place, you can verify it by loading the model in a Python sh
 from llama_cpp import Llama
 
 model_path = "./Phi-3-mini-4k-instruct-q4.gguf"
-llm = Llama(model_path=model_path)
-output = llm("Hello world!", max_tokens=5)
-print(output)
+
+try:
+    llm = Llama(model_path=model_path, verbose=False)
+    output = llm("Hello world!", max_tokens=10)
+    print("Generated:", output['choices'][0]['text'])
+except Exception as e:
+    print("Error loading or generating:", e)
 ```
 
 #### 3.3 Notes on Handling Large Models
