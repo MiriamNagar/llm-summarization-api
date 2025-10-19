@@ -17,9 +17,10 @@ It translates Hebrew to English, generates concise 5-bullet summaries, and optio
   - [Minimum Requirements](#minimum-requirements)
   - [Clone the Repository](#1-clone-the-repository)
   - [Install Dependencies](#2-install-dependencies)
-  - [Verify Model Deployment](#3-verify-model-deployment)
-  - [Run the FastAPI Server](#4-run-the-fastapi-server)
-  - [Send Example Requests](#5-send-example-requests)
+  - [Handling the Large Model File (Phi-3-mini-4k-instruct-q4.gguf)](#3-handling-the-large-model-file-phi-3-mini-4k-instruct-q4gguf)
+  - [Verify Model Deployment](#4-verify-model-deployment)
+  - [Run the FastAPI Server](#5-run-the-fastapi-server)
+  - [Send Example Requests](#6-send-example-requests)
 - [Folder Overview](#folder-overview)
 - [ML Engineer Assessment Deliverables](#ml-engineer-assessment-deliverables)
   - [Part 1: Model Deployment](#part-1-model-deployment)
@@ -97,7 +98,61 @@ pip install -r requirements.txt
 
 ---
 
-### 3. Verify Model Deployment
+### 3. Handling the Large Model File (Phi-3-mini-4k-instruct-q4.gguf)
+
+The `Phi-3-mini-4k-instruct-q4.gguf` model is a very large file (~2.2 GB). GitHub and other Git-based version control platforms **cannot handle files larger than 2GB**, so this file is **not included in the repository**.
+
+To use the API, you must **download the model manually**. Follow the steps below.
+
+
+#### 3.1 Manual Download
+
+1. Visit the official Hugging Face model page:  
+   [Phi-3 Mini 4k Instruct GGUF](https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf).
+
+2. Download the file `Phi-3-mini-4k-instruct-q4.gguf`.
+
+3. Place the file in the root of this project folder:
+
+    ```
+    llm-summarization-api/
+    ├── app/
+    ├── examples/
+    ├── Phi-3-mini-4k-instruct-q4.gguf ← place it here
+    ├── requirements.txt
+    └── ...
+    ```
+
+    > **Important Notes**:  
+    > - It's not recommended to attempt to commit or push this file to GitHub. Pushing will fail because it exceeds GitHub’s 2GB limit.  
+    > - Keep a local copy of the file for any new clones of the repository.
+
+#### 3.2 Verify Model File
+
+Once the file is in place, you can verify it by loading the model in a Python shell or via the deployment script:
+
+```python
+from llama_cpp import Llama
+
+model_path = "./Phi-3-mini-4k-instruct-q4.gguf"
+llm = Llama(model_path=model_path)
+output = llm("Hello world!", max_tokens=5)
+print(output)
+```
+
+#### 3.3 Notes on Handling Large Models
+
+- RAM Requirements: Loading the model on CPU requires at least 8 GB of RAM.
+- Disk Space: Ensure you have enough space for the model and any temporary cache files.
+- Streaming: Because the model is large, initial loading might take some time; once loaded, the streaming API is fast.
+- Versioning: Always use the q4 GGUF version as it is quantized for lower memory usage. Other versions may require more RAM and slow down inference.
+
+Summary: The Phi-3-mini-4k-instruct-q4.gguf model must be downloaded manually, cannot be pushed to GitHub, and should be placed in the project root for the API to work correctly.
+
+
+---
+
+### 4. Verify Model Deployment
 
 Before running the API, verify that both models load and work correctly:
 
@@ -126,7 +181,7 @@ To view Hebrew output properly, you can use a terminal with full Unicode RTL sup
 
 ---
 
-### 4. Run the FastAPI Server
+### 5. Run the FastAPI Server
 
 To start the API locally, run:
 
@@ -138,7 +193,7 @@ Once running, open http://127.0.0.1:8000/docs to explore the interactive Swagger
 
 ---
 
-### 5. Send Example Requests
+### 6. Send Example Requests
 
 You can use either cURL or the provided Python client:
 
